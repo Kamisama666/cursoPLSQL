@@ -14,11 +14,13 @@ denominados scripts. Para ejercutarlos usaremos la orden:
 Junto con el curso se adjunta una carpeta llamada "ejecutables" en la que se guardan los scripts usados en el
 curso para que puedan ser directamente ejecutado. A lo largo del curso se indicará el nombre del 
 script usado con la sintaxis.
-	--script: <nombre>
+
+	--script: nombre
 
 Tambien encontraras varios ejercicios para realizar en la carpeta ejercicios asi como su solución.
 A lo largo del curso se indicara cuando se puede realizar cada uno con la sintaxis:
-	--ejercicio: <nombre>
+
+	--ejercicio: nombre
 
 Este curso ha sido realizada usando Oracle 11g r2 en un CentOS 6.4
 
