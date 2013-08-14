@@ -6,30 +6,34 @@
  \____\__,_|_|  |___/\___/  |_|   |_____/_/  |____/ \__\_\_____|
                                                                 
 				Kamisama666
-				v 0.3
+				v 0.5
 
 En este curso aprenderemos los fundamentos del lenguaje PL/SQL, un lenguaje de programación
 diseñado para ser usado con en motor de bases de datos Oracle. Por esta razón solo podrá 
 usarse con esta base de datos y no otra. Para realizar este curso es necesario conocer
 el lenguaje de consultas SQL, el lenguaje de manipulacion DML y algunos conceptos básicos de programación.
-Es preferible que este curso se realice junto con el apoyo de otros recursos adicionales.
 
-Como en cualquier otro lenguaje, las instrucciones de PL/SQL se guardan en archivos de texto plano 
+Como en cualquier otro lenguaje, las istrucciones de PL/SQL se guardan en archivos de texto plano 
 denominados scripts. Para ejercutarlos usaremos la orden:
 	@<ruta_archivo>;
-
 Junto con el curso se adjunta una carpeta llamada "ejecutables" en la que se guardan los scripts usados en el
 curso para que puedan ser directamente ejecutado. A lo largo del curso se indicará el nombre del 
 script usado con la sintaxis.
 	--script: <nombre>
-
-Tambien encontraras varios ejercicios para realizar en la carpeta ejercicios asi como su solucion.
+Tambien encontraras varioes ejercicios para realizar en la carpeta ejercicios asi como su solucion.
 A lo largo del curso se indicara cuando se puede realizar cada uno con la sintaxis:
-	--ejercicio: <nombre>
-
-Este curso ha sido realizada usando Oracle 11g r2 en un CentOS 6.4
+	--ejercio: <nombre>
+Esa guía ha sido realizada usando Oracle 11g r2 en un CentOS 6.4
 
 */
+
+-------------------------------------------------------------------------------------------------------------
+
+	--#Comandos oracle
+	--Para ver las tablas de una schema:
+	select table_name from user_tables;
+
+
 
 /*-------------------------------------------------------------------------------------------------------------
 !!	1. Estructura básica de pl/sql
@@ -85,7 +89,7 @@ END; /*con end terminamos el programa*/
 /*-------------------------------------------------------------------------------------------------------------
 	3. Mostrar datos por pantalla
 	Para poder mostrar el contenido de una variable o una cadena de texto
-	usamos el comando:
+	usamos el comando
 	dbms_output.put_line(dato a mostar);
 */
 
@@ -206,6 +210,19 @@ delete from empleados where codigoempleado=codigo;
 END;
 
 
+--ejercicio: ejer1.slq (solucion:ejer1solu.sql)
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*	Estructuras de control
+		-If
+		-case
+		-loop
+		-while
+		-for
+
+*/
 
 /*-------------------------------------------------------------------------------------------------------------
 	8. Sentencias condicionales
@@ -222,6 +239,7 @@ END;
 */
 
 --script:ejem7.sql
+
 SET SERVEROUTPUT ON
 DECLARE
 valor1 int:=5;
@@ -277,5 +295,264 @@ END IF;
 END;
 /
 
+--ejercicio: ejer2.sql (solucion:eje2solu.sql)
+-------------------------------------------------------------------------------------------------------------
+/*
+	9. CASE
 
---ejercicio: ejer1.slq (solucion:ejer1solu.sql)
+	Case tiene dos utilidades:
+		-Evaluar una serie de condiciones hasta que una sea correcto, momento en que se ejecuta el codigo
+		que corresponda a esa condicion
+		-Evaluar una el contenido de una variable con una serie de valores hasta que coinciza con
+		uno de ellos. Entonces ejecutara el codigo que le corresponda.
+
+
+La sentencia case va comprobando el valor de una variable y, cuando coincide con el valor con el que los estamos comparando,
+devuelve un valor. Esto es importante. La sentencia no ejecuta instrucciones sino que devuelve valores.
+Esto significa que para capturar lo que devuelve habrá que meterlo dentro de una variable o mostrarlo con un 
+DBMS_OUTPUT.PUT_LINE()
+*/
+
+--Podemos hacerlo de dos formas:
+
+--1. Vamos haciendo comparaciones con el valor exacto de la varible:
+
+--script:ejem8a.sql
+
+set serveroutput on
+DECLARE
+nota varchar(5):='B';
+texto varchar(10);
+
+BEGIN
+texto:=CASE nota 
+WHEN 'A' THEN 'Muy buena' 
+WHEN 'B' THEN 'Buena' --Esta es la correcta 
+WHEN 'C' THEN 'Normal' 
+WHEN 'D' THEN 'Mala' 
+ELSE 'Desconocida' 
+END; --Con un END indicamos que se termina el CASE
+dbms_output.put_line(texto);
+END;
+--Como en nota hay 'B' en texto se guardara la cadena 'buena'
+
+
+--Tambien podemos hacerlo con PUT_LINE:
+
+--script:ejem8b.sql
+SET SERVEROUTPUT ON
+DECLARE
+nota varchar(5):='B';
+
+BEGIN
+CASE nota 
+WHEN 'A' THEN 
+DBMS_OUTPUT.PUT_LINE('Muy buena');
+WHEN 'B' THEN 
+DBMS_OUTPUT.PUT_LINE('Buena');
+WHEN 'C' THEN 
+DBMS_OUTPUT.PUT_LINE('Normal');
+WHEN 'D' THEN 
+DBMS_OUTPUT.PUT_LINE('Mala');
+ELSE 
+DBMS_OUTPUT.PUT_LINE('Desconocida'); -- Tambien podemos usar ELSE para ejecutar una instruccion en el caso
+--de que ninguni de los valores coincida
+
+END CASE; --cuando el CASE no devuelve un valor que hay que guardar en la variable se ha de terminar con END CASE
+
+END;
+
+--De esta forma no hay que guardarlo en una variable
+
+
+--Por ultimo, en vez de que se haga una comparacion entre la variable y los posibles valores podemos definir nuestras propias
+-- comparaciones
+
+--script:ejem8c.sql
+SET SERVEROUTPUT ON
+
+DECLARE
+nota NUMBER(3,1):=8.5;
+
+BEGIN
+
+CASE
+
+WHEN nota < 5 AND nota >= 0 THEN 
+	DBMS_OUTPUT.PUT_LINE('Suspenso');
+WHEN nota >= 5 AND nota <7 THEN
+	DBMS_OUTPUT.PUT_LINE('Aprobado');
+WHEN nota >=7 AND nota <9 THEN 
+	DBMS_OUTPUT.PUT_LINE('Notable');
+WHEN nota >=9 AND nota <= 10 THEN 
+	DBMS_OUTPUT.PUT_LINE('SOBRESALIENTE');
+ELSE 
+	DBMS_OUTPUT.PUT_LINE('Nota incorrecta');
+END CASE;
+
+END;
+
+--De esta froma no estamos tan limitados en cuanto a las variables que usamos o las comparaciones que podemos hacer
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	10. LOOP
+	Siguiendo con las sentencias de control de flujo, LOOP nos permite crear un bucle, es decir, ejecutar unas istrucciones
+	repetidamente de forma indefinida. Si solo hacemos esto, el codigo se ejectura eternamente creando un bucle infinito,
+	haciendo que el programa falle. Por esta razon, todo bucle debe ejecutar en algun momento la instruccion EXIT.
+	Para controlar el momento en que ocurra esto definiremos alguna condicion para decir si es el momento de salir del bucle.
+
+	Su estructura basica es
+
+	LOOP
+		<instrucciones>
+		<instruccion_salida>
+	END LOOP;
+	
+	Esta condicion puede ser definida de dos formas: usando el WHEN y el IF. Vamos a ver ambas en unos ejemplos en los
+	que guardaremos el codigo de empleado mas alto e iremos imprimiendo el nombre del primer empleado, despues
+	del segundo y así hasta llegar hasta el ultimo.
+*/
+
+--script: ejem9a.sql
+set serveroutput on
+DECLARE
+mayor int;
+nombreempleado varchar2(50);
+contador int:=1;
+BEGIN
+select codigoempleado INTO mayor from empleados where codigoempleado >= all (select codigoempleado from empleados);
+
+LOOP
+select nombre into nombreempleado from empleados where codigoempleado=contador;
+dbms_output.put_line(nombreempleado);
+EXIT WHEN contador=mayor;
+contador:=contador+1;
+END LOOP;
+
+END;
+
+
+
+
+--script ejem9b.sql
+
+set serveroutput on
+DECLARE
+mayor int;
+nombreempleado varchar2(50);
+contador int:=1;
+BEGIN
+select codigoempleado INTO mayor from empleados where codigoempleado >= all (select codigoempleado from empleados);
+
+LOOP
+    select nombre into nombreempleado from empleados where codigoempleado=contador;
+    dbms_output.put_line(nombreempleado);
+    if contador=mayor THEN
+            EXIT;
+    END IF;
+    contador:=contador+1; 
+END LOOP;
+
+END;
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	11. WHILE
+	De la misma forma que loop, WHILE ejecuta instrucciones dentro de un bucle pero él lleva integrado una condicion
+	de salida de forma que no hay que crearla nosotros como con loop usando.
+
+	Su estructura basica es
+
+	WHILE <condicion> LOOP
+		<instrucciones>
+	END LOOP;
+
+	Para comprobarlo haremos el mismo ejemplo anterior pero usando WHILE:
+*/
+
+
+--script:ejem10.sql
+
+set serveroutput on
+
+DECLARE
+mayor int;
+nombreempleado varchar2(50);
+contador int:=1;
+
+BEGIN
+select codigoempleado INTO mayor from empleados where codigoempleado >= all (select codigoempleado from empleados);
+
+WHILE contador<=mayor LOOP --como ves en la propia definicion de WHILE indicamos la condicion para que se siga ejecutando
+select nombre into nombreempleado from empleados where codigoempleado=contador;
+dbms_output.put_line(nombreempleado);
+contador:=contador+1;
+END LOOP; 
+
+END;
+/
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	12. FOR
+	Como has podido observar, en los anteriores bucles hemos usado un indice numerico para determinar en que momento 
+	debiamos terminar el bucle. Aunque la condicion podria ser cualquier otra, resulta muy util usar un indice.
+	Por ello el bucle FOR lleva incorporado uno en su definion y decidira si continuar o salir en funcion de este.
+
+	Para ello crea una variable que solo puede ser accedida dentro del bucle. La da un valor inicial y lo va incrementando
+	hasta llegar a un valor final tambien especificado. Hasta entonces ejecuta las instrucciones de dentro.
+	Como ves esto nos permite manejar un indice facilmente y dificulta crear un bucle infinito.
+
+	Su estructura básica es:
+
+	FOR <indice> IN <valor_inicio> .. <valor_final> LOOP
+		<instrucciones>
+	END LOOP;
+
+	De nuevo lo veremos el funcionamiento con el mismo ejemplo:
+*/
+--script: ejem11a.sql
+
+set serveroutput on
+DECLARE
+mayor int;
+nombreempleado varchar2(50);
+BEGIN
+select codigoempleado INTO mayor from empleados where codigoempleado >= all (select codigoempleado from empleados);
+
+FOR contador IN 1 .. mayor LOOP
+select nombre into nombreempleado from empleados where codigoempleado=contador;
+dbms_output.put_line(nombreempleado);
+END LOOP;
+
+END;
+
+
+--Mediante la instruccion REVERSE podemos hacer que el contador empiece en el valor final y vaya hasta
+--el inicial
+--De esta forma mostraremos los nombre empezando por el último:
+
+--script: ejem11b.sql
+set serveroutput on
+DECLARE
+mayor int;
+nombreempleado varchar2(50);
+BEGIN
+select codigoempleado INTO mayor from empleados where codigoempleado >= all (select codigoempleado from empleados);
+
+FOR contador IN REVERSE 1 .. mayor LOOP
+select nombre into nombreempleado from empleados where codigoempleado=contador;
+dbms_output.put_line(nombreempleado);
+END LOOP;
+
+END;
+/
+
+--ejercicio:ejer3.sql (solucion:ejer3asolu.sql,ejer3bsolu.sql) y ejer4.sql (solucion:ejer4solu.sql)

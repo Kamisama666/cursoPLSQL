@@ -1,0 +1,21 @@
+SET SERVEROUTPUT ON
+DECLARE
+actitud varchar(5):='B';
+
+BEGIN
+CASE actitud 
+WHEN 'A' THEN 
+DBMS_OUTPUT.PUT_LINE('Muy buena');
+WHEN 'B' THEN 
+DBMS_OUTPUT.PUT_LINE('Buena');
+WHEN 'C' THEN 
+DBMS_OUTPUT.PUT_LINE('Normal');
+WHEN 'D' THEN 
+DBMS_OUTPUT.PUT_LINE('Mala');
+
+ELSE 
+DBMS_OUTPUT.PUT_LINE('Desconocida');
+END CASE;
+
+END;
+/
