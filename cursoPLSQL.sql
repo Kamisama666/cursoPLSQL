@@ -6,7 +6,7 @@
  \____\__,_|_|  |___/\___/  |_|   |_____/_/  |____/ \__\_\_____|
                                                                 
 				Kamisama666
-				v 0.5
+				v 0.65
 
 En este curso aprenderemos los fundamentos del lenguaje PL/SQL, un lenguaje de programación
 diseñado para ser usado con en motor de bases de datos Oracle. Por esta razón solo podrá 
@@ -556,3 +556,209 @@ END;
 /
 
 --ejercicio:ejer3.sql (solucion:ejer3asolu.sql,ejer3bsolu.sql) y ejer4.sql (solucion:ejer4solu.sql)
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	13. CURSORES
+	
+	Los cursores son espacios de memoria, al igual que las variables, que nos permiten guardar el resultado de consultas.
+	Existen dos tipos: los implicitos y los explicitos. En realidad, los primeros ya los hemos vistos. Cada vez que 
+	realizamos una consulta y guardamos los resultados en una variable estamos usando un cursor implicito. Son cursores que 
+	crean y manejan el sistema por si mismo y a los que no podemos acceder facilmente.	De ahí que solo podamos guardar
+	un dato o una fila. Sin embargo, para poder acceder a todas las filas de una consulta podemos declarar
+	un cursor explicito. Al declararlo con un nombre que lo identifique, podremos trabajar con él de forma más
+	completa. Para ello, un puntero ira señalando cada una de las filas que devuelva la consulta para poder recuperar
+	datos de ella. A la hora de trabajar con un cursor explicito hemos de seguir una serie de pasos:
+
+		-Declarar el cursor: Le damos un nombre que lo identifique y hacemos la consulta que queremos guardar en el
+		cursor.
+		-Abrir el cursor: La consulta se realiza y se guarda en el cursor. Además, el puntero se coloca en la 
+		primera fila.
+		-Recuperar datos: Mediante la instruccion FETCH recuperamos los datos de una fila y los introducimos
+		es una variable. A continuación el puntero pasa a señalar la siguiente fila. De esta forma iremos recuperando
+		los datos fila por fila. Normalmente lo haremos a través de un bucle.
+		-Cerramos el cursor. Se libera la memoria en la que se había guardado la consulta.
+
+	Para poder trabajar con ellos, los cursores tienen una serie de propiedades. Gracias a estos podremos, por ejemplo,
+	 cuando salir del bucle que recorre el cursor. Las que vamos a usar son:
+
+		-%ISOPEN: devuelve TRUE si el cursor ha sido abierto.
+		-%FOUND: devulve TRUE si el ultimo FETCH devolvió una fila. Por lo tanto, cuando hayamos recorrido
+		todas las filas devolverá FALSE.
+		-%NOTFOUND: lo contrario de la anterior.
+		-%ROWCOUNT: indica el numero de filas que hemos recorrido.
+
+	Veamoslo con un ejemplo. Realizaremos una consulta que devuelva el nombre de los clientes junto con el de sus
+	representantes de ventas. Los iremos mostrando uno por uno junto con el numero de fila por la que vamos:
+*/
+
+--script: ejem12.sql
+set serveroutput on
+DECLARE
+--Declaramos el cursor mediante la sintaxis: CURSOR <nombre> IS <consulta>
+CURSOR cli_rep is select nombrecliente,nombre from clientes join empleados on codigoempleadorepventas=codigoempleado;
+resultado cli_rep%ROWTYPE; --En esta variable guardaremos las filas que devulva la consulta. Como los datos
+--son de varias tablas hacemos que coja los campos del cursor
+
+
+BEGIN
+OPEN cli_rep; --Abrimos el cursor con la sintaxis: OPEN <nombre>
+
+FETCH cli_rep INTO resultado; --Hemos de hacer el FETCH antes de empezar el bucle para que %ISOPEN devulva TRUE
+DBMS_OUTPUT.PUT_LINE(cli_rep%ROWCOUNT||'. '||resultado.nombrecliente||' tiene como representante a '||resultado.nombre);
+
+WHILE cli_rep%FOUND LOOP
+        FETCH cli_rep INTO resultado;
+        DBMS_OUTPUT.PUT_LINE(cli_rep%ROWCOUNT||'. '||resultado.nombrecliente||' tiene como representante a '||resultado.nombre);
+END LOOP;
+
+CLOSE cli_rep; --Cerramos el cursor con la sentencia CLOSE
+
+END;
+/
+
+--ejercicio:ejer5.sql (solu:ejer5solu.sql)
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	14. Excepciones
+	Una excepcion es un error que se produce en el programa por diversas razones. Nosotros podemos manejar
+	esas excepciones y ejecutar el codigo que creamos necesario, ya sea informando al usuario de lo
+	que ha ocurrido o cancelando las operaciones realizadas para provocar inconsistencias en la base
+	de datos (algo que veremos en el proximo apartado). Existen tres tipos de excepciones:
+
+		-Internamente definidas: son excepciones definidas por Oracle. Tienen un número asignado para
+		identificarlas.
+		-Predefinidas internamente: Son como las anteriores pero, dado su frecuencia de ocurrecia, 
+		Oracle las ha asignado un nombre para que sean más fáciles de manejar.
+		-Definidas por el usuario: como dice el nombre, son excepciones definidas por nosotros.
+
+	Independientemente de cual utilicemos, las ecepciones serán manejadas (especicando lo que queremos ejecutar) en
+	la sección EXCEPTION, que se añade a las que ya conocíamos, DECLARE y BEGIN. En ella utilizaremos la siguiente
+	sitaxis:
+
+		WHEN <nombre_excepcion1> THEN
+			codigo a ejecutar si se produce esta excepcion
+		WHEN <nombre_excepcion2> THEN
+			codigo a ejecutar si se produce esta excepcion
+		WHEN OTHERS THEN
+			codigo a ejecutar si se ha producido una excepcion que no es ninguna de las anteriores
+
+	Como veis definimos que hacer en caso de que ocurran una serie de excepciones y, ademas, opcionalmente podemos
+	usar WHEN OTHERS para definir que hacer en caso de que ocurra una excepcion que no hayamos preveido y, por lo
+	tanto, no se encuentre entre las anteriores.
+
+
+	Ahora veremos como trabajar con los tres tipos:
+
+
+	
+*/
+
+/*
+
+	-Internamente definidas:
+
+	Dado que este tipo de instrucciones no tienen asignadas un nombre, la forma más comoda de trabajar con ellas
+	es asignarle uno. Esto lo haremos de la siguiente manera:
+
+	Lo que haremos será usar la excepcion -01422 que se da cuando intentamos introducir varios columnas en 
+	una variable que no es un cursor. Esta excepcion esta predefinida pero nosotros la usaremos como si no.
+*/
+
+--script:ejem13.sql
+
+set serveroutput on
+DECLARE
+ofinasspain oficinas%ROWTYPE; --aqui introduciremos el resultado de la consulta. 
+demasiadas_columnas EXCEPTION; --delclaramos el nombre de la excepcion con la sintaxis: <nombre_excepcion> EXCEPTION
+PRAGMA EXCEPTION_INIT(demasiadas_columnas,-01422); --asignamos el nombre que acabamos de definir a la excepcion
+--que hemos elejido. Usamos la sintaxis: PRAGMA EXCEPTION_INIT(<nombre_excepcion>,<numero_excepcion>)
+
+BEGIN
+
+select * into ofinasspain from oficinas where pais='España';
+
+EXCEPTION
+	WHEN demasiadas_columnas THEN --Capturamos la excepcion
+		DBMS_OUTPUT.PUT_LINE('La consulta tiene demasiadas columas'); --definimos lo que se ha de ejecutar
+END;
+
+
+/*
+	-Excepciones predefinidas:
+
+	Estas son excepciones comunes a las que el sistema les ha asignado un nombre (aunque también se pueden referenciar
+	por su número identificador). Por lo tanto, no es necesario que las definamos nosotros, sino que podemos usarlas
+	directamente.
+
+	Las excepciones predefinidas más importantes son:
+
+		-NO_DATA_FOUND (ORA-1403): Una consulta select no ha devuelto resultados.
+		-TOO_MANY_ROWS (ORA-01422): una consulta ha devuelto más filas de las que puede almacenar la variable en la que se guarda
+		-INVALID_CURSOR (ORA-01001): operación invalida con un cursor.
+		-ZERO_DIVIDE (ORA-01476): División de un número por cero.
+		-DUV_VAL_ON_INDEX (ORA-01017): inserción de un registro duplicado.
+
+	En el anterior ejemplo usamos TOO_MANY_ROWS, pero a través de su identificador. Por ellos tuvimos que darle un nombre.
+	Ahora realizaremos el mismo ejemplo pero usando su nombre predefinido
+*/
+
+--script: ejem14.sql
+set serveroutput on
+DECLARE
+ofinasspain oficinas%ROWTYPE; --aqui introduciremos el resultado de la consulta. 
+
+BEGIN
+select * into ofinasspain from oficinas where pais='España';
+
+EXCEPTION
+	WHEN TOO_MANY_ROWS THEN --Como es una excepcion predefinida, podemos usarla sin tener que definirla nosotros
+		DBMS_OUTPUT.PUT_LINE('La consulta tiene demasiadas columas'); 
+END;
+
+
+/*
+	-Definidas por el usuario
+
+	Son excepciones cuyo nombre definimos nosotros asi como cuando se activan, es decir, bajo cuales
+	condiciones ocurrirá la excpcion. Lo primero que hacemos es definirla con la sintaxis:
+
+		<nombre_excepcion> EXCEPTION;
+
+	Despues, durante la ejecución del programa, definimos situaciones bajo las cuales se activaran las
+	excepciones. Para lanzar las excepciones usamos:
+	
+		RAISE <nombre_excepcion>
+
+	Para comprobarlo haremos una excepcion que ocurra si la fecha esperada de un pedido es anterior a su fecha 
+	de entrega.
+*/
+
+--script: ejem15.sql
+set serveroutput on
+DECLARE
+npedido int:=9;
+mipedido pedidos%ROWTYPE;
+TIEMPO_ENTREGA_EXCEDIDO EXCEPTION; --definimos nuestra escepcion
+
+BEGIN
+
+select * into mipedido from pedidos where codigopedido=npedido;
+
+IF mipedido.fechaesperada<mipedido.fechaentrega THEN 
+	RAISE TIEMPO_ENTREGA_EXCEDIDO; --hacemos que se lance en el momento que consideremos oportuno
+END IF;
+
+EXCEPTION
+	WHEN TIEMPO_ENTREGA_EXCEDIDO THEN --capturamos la excepcion igual que las otras
+		DBMS_OUTPUT.PUT_LINE('El pedido ha llegado con retraso');
+END;
+
+
+--ejercicio:ejer6.sql (solu:ejer6asolu.sql y ejer6bsolu.sql)
+
