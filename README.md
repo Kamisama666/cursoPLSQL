@@ -9,7 +9,8 @@ Es preferible que este curso se realice junto con el apoyo de otros recursos adi
 
 Como en cualquier otro lenguaje, las instrucciones de PL/SQL se guardan en archivos de texto plano 
 denominados scripts. Para ejercutarlos usaremos la orden:
-  @<ruta_archivo>;
+
+  	@<ruta_archivo>;
 
 Junto con el curso se adjunta una carpeta llamada "ejecutables" en la que se guardan los scripts usados en el
 curso para que puedan ser directamente ejecutado. A lo largo del curso se indicará el nombre del 
