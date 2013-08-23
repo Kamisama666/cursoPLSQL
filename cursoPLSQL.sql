@@ -6,7 +6,7 @@
  \____\__,_|_|  |___/\___/  |_|   |_____/_/  |____/ \__\_\_____|
                                                                 
 				Kamisama666
-				v 0.65
+				v 0.8
 
 En este curso aprenderemos los fundamentos del lenguaje PL/SQL, un lenguaje de programación
 diseñado para ser usado con en motor de bases de datos Oracle. Por esta razón solo podrá 
@@ -762,3 +762,247 @@ END;
 
 --ejercicio:ejer6.sql (solu:ejer6asolu.sql y ejer6bsolu.sql)
 
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	15. Transacciones	
+	Una transacción es una o más sentencias que son tratadas como una sola unidad. Esto quiere decir que todas
+	las intrucciones deben realizarse o ninguna lo hará. Por ejemplo, si realizamos un update de 20 campos y
+	el número 10 provoca un error, todos los anteriores serán cancelados ya que no se han realizado todas
+	las operaciones. Esto no permite realizar cambios sabiendo que, de ocurrir algún fallo, todas las acciones
+	anteriores se cancelarían evitando asi inconsistencias en la base de datos. 
+
+	Para entender su utilidad,imagina que estamos trabajando con la base de datos de un banco. Hemos de realizar 
+	una transferencia de una cuenta a otra. Para ello, primero restamos la cantidad de una de las cuentas pero,
+	al ir a sumarsela a la otra, se produce un error. Esto causaría que esa cantidad de dinero desapareciera
+	virtualmente y dejara de existir para el sistema. Esto sería catastrofico. Para evitarlo podemos
+	tratar toda la operación como una transacción de forma que, al producirse el error, la operación
+	anterior se cancele y no se pierda el dinero.
+
+	Por defecto, Oracle cada sentencia que ejecutemos como una transacción individual. Para evitar esto hemos de ejecutar
+	la sentencia
+
+			SET AUTOCOMMIT OFF
+
+	A partir de entonces todas las sentencias que introduzcamos serán consideradas parte de una misma transacción y no
+	se ejecutarán hasta que aceptemos o cancelemos la transacción.
+
+	Para terminar una transacción y hacer que se ejecuten todas las instrucciones que contiene usamos las sentencia:
+
+		COMMIT WORK
+
+	Para terminar la transacción cancelando todas las instrucciones anteriores se utiliza:
+
+		ROLLBACK WORK
+
+
+	Veamos un ejemplo. Introduciremos un nuevo empleado en la base de datos y despues cambiaremos el codigooficina por
+	uno erroneo para que surja un error. Capturaremos el error y ejecutaremos un rollback para cancelar la creación
+	del empleado.
+*/
+
+SET AUTOCOMMIT OFF
+SET SERVEROUTPUT ON
+DECLARE
+error_integridad EXCEPTION;
+PRAGMA EXCEPTION_INIT(error_integridad,-02291);
+nuevoempleado empleados%ROWTYPE;
+
+BEGIN
+insert into empleados values(32,'Juan','Lopez','Perales','10','emailj@k.com','PAR-FR',29,'becario'); --creamos el empleado si problemas
+select * into nuevoempleado from empleados where codigoempleado=32;
+dbms_output.put_line(nuevoempleado.codigoempleado||' '||nuevoempleado.nombre);
+update empleados set CodigoOficina=10 where codigoempleado=32; 
+COMMIT WORK;
+
+EXCEPTION
+WHEN error_integridad THEN
+        ROLLBACK WORK;
+        DBMS_OUTPUT.PUT_LINE('Se ha producido un error de integridad');
+END;
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	16. Procedimientos
+	Hasta ahora los scripts que hemos estado haciendo eran código anónimo, es decir, se ejecutaban una sola
+	vez y no se podían volver a utilizar salvo volviendo a ejecutarlos. Sin embargo, los procedimientos
+	nos permiten empaquetar una serie de instrucciones que realicen una función y que, una vez se ejecuten,
+	quedarán guardadas e identificadas por un nombre para poder volver a usarlas. De esta forma podremos 
+	llamarlos cada vez que los necesitemos sin tener que volver a compilar desde el código fuente.
+	Además, al llamarlos, podemos pasarlos una serie de valores para que puedan trabajar con ellos.
+
+	La estructura básica de un procedimiento es:
+
+
+CREATE OR REPLACE PROCEDURE nombreProcedimiento (parámetro1 [modelo] tipoDatos, parámetro2 [modelo] tipoDatos) 
+IS
+declaraciones
+BEGIN
+instrucciones
+EXCEPTION
+captura de excepcioes
+END;
+
+
+	Poner OR REPLACE es opcional pero hace que, si ya existe un procedimiento con el mismo nombre, se replace con el nuestro.
+	Los parametros también pueden omitirse, en cuyo caso no se necesita poner parentesis ni al crearlo ni al invocarlo.
+	Lo que va después del IS corresponder a la parte de DECLARE.
+
+	Hay que tener en cuenta que el tipo de los parametros no debe especificar su longitud. Es decir, no podemos
+	poner varchar(30), solo varchar.
+
+	El modelo que se pasa junto con las variables se refiere al uso que se le va a dar a esa variable. Pueden ser:
+
+		IN: son variables que han sido definidas y que se le pasan al procedimiento para que use su contenido.
+		OUT: estas se definen al declararlas y se les da contenido durante el procedimiento. De esta forma, podemos
+		almacenar dentro algun dato durante la ejecucución del procedimiento y, cuando termine, podremos acceder a ellas
+		desde el programa principal.
+		INOUT: son una mezcla de las anteriores. Cuando se las pasa al procedimiento ya han sido definidas
+		y contienen algún valor. Hacemos las operaciones necesaria con esa variable y, cuando se termina el
+		procedimiento, podemos acceder a su nuevo valor desde el programa principal.
+
+	Para llamar a un procedimiento dentro de un script tan solo hemos de poner su nombre y, si es necesario, 
+	los parametros entre parentesis. De esta forma
+
+		nombreProcedimiento(paramentro1, paramentro2);
+
+	Si lo queremos llamar desde la línea de comando usarmos:
+
+		call nombreProcedimiento(paramentro1, paramentro2);
+
+	Vamos a ver un ejemplo de un procedimiento que tomara como parametro el codigo de un empleado y escribira en
+	pantalla el nombre de su jefe.
+*/
+
+--script: ejem17.sql
+
+set serveroutput on
+CREATE OR REPLACE PROCEDURE escribejefe (codigoemp IN int)
+IS
+codigomijefe int;
+nombrejefe varchar2(50);
+BEGIN
+select codigojefe into codigomijefe from empleados where codigoempleado=codigoemp;
+select nombre into nombrejefe from empleados where codigoempleado=codigomijefe;
+DBMS_OUTPUT.PUT_LINE(nombrejefe);
+END;
+
+/*
+Ahora vamos a ver otro ejemplo similar al anterior. Pero en esta ocasion el procedimiento tamará como
+paramentros el codigo del empleados y el nombre de una variable en la que almacenaremos el nombre 
+completo del jefe. Esta vez no lo mostraremos directamente en pantalla sino que habra de ser mostrado
+desde el programa principal.
+*/
+
+--script: ejem18.sql
+
+set serveroutput on
+CREATE OR REPLACE PROCEDURE devuelvejefe (codigoemp IN int, nombrejefecompleto OUT varchar2)
+IS
+codigomijefe int;
+nombrejefe empleados%ROWTYPE;
+BEGIN
+select codigojefe into codigomijefe from empleados where codigoempleado=codigoemp;
+select * into nombrejefe from empleados where codigoempleado=codigomijefe;
+nombrejefecompleto:=nombrejefe.nombre||' '||nombrejefe.apellido1||' '||nombrejefe.apellido2;
+END;
+
+/*
+Para poder ver el funcionamiento del anterior script haremos otro que ejecute el procedimiento e
+imprima el nombre del jefe. Este script debe ser ejecutado despues de introducir el procedimiento.
+*/
+
+--script:ejem18b.sql
+
+set serveroutput on
+DECLARE
+nombrejefe varchar(70);
+BEGIN
+devuelvejefe(31,nombrejefe);
+DBMS_OUTPUT.PUT_LINE(nombrejefe);
+END;
+
+
+/*
+	Para borrar un procedimiento que ha sido almacenado usamos:
+
+		DROP PROCEDURE nombre_procedimiento;
+*/
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+/*
+	17. Funciones
+
+	Las funciones son un tipo especial de procedimiento y todo lo que sabemos sobre ellos se aplican a las 
+	funciones. La diferencia devuelven un valor. Además, no pueden ser llamadas con la sentencia CALL como los
+	procedimientos, tan solo pueden invocarse desde un script o un procedimiento.
+
+	Para devolver el valor usaremos la instrucción:
+
+		RETURN variable_devuelta;
+
+	Tambien habremos de indicar al principio el tipo de dato que vamos a devolver. Es importante tener en mente que
+	todos los parametros han de ser de tipo IN (es el que se pone por defecto, asi que no hay que especificarlo) y
+	que no podemos usar sentencias de transacciones.
+
+
+	Su estructura básica es:
+
+CREATE OR REPLACE FUNCTION nombreFunción (parámetro1 tipoDatos,parámetro2 tipoDatos)
+RETURN tipoDatoDevuelto
+IS
+secciónDeDeclaraciones
+BEGIN
+instrucciones
+RETURN datodevuelto
+EXCEPTION
+controlDeExcepciones
+END;
+
+Haremos un ejemplo similar al anterior en que la función reciba el codigo de un empleado y devuelva
+el nombre de su jefe. También haremos otro que llame a esta función.
+
+*/
+
+--script:ejem19.sql
+
+CREATE OR REPLACE FUNCTION nombredejefe (codigomiempleado int)
+RETURN varchar2
+IS
+codigomijefe int;
+mijefe empleados%ROWTYPE;
+nombremijefe varchar2(60);
+BEGIN
+select codigojefe into codigomijefe from empleados where codigoempleado=codigomiempleado;
+select * into mijefe from empleados where codigoempleado=codigomijefe;
+nombremijefe:=mijefe.nombre||' '||mijefe.apellido1||' '||mijefe.apellido2;
+RETURN nombremijefe;
+END;
+
+
+--Con este lo llamaremos y mostraremos lo que devuelve
+
+--script:ejem19b.sql
+
+set serveroutput on
+DECLARE
+nombrejefe varchar2(60);
+codigoempleado int:=31;
+BEGIN
+nombrejefe:=nombredejefe(codigoempleado);
+DBMS_OUTPUT.PUT_LINE(nombrejefe);
+END;
+
+
+--Estos ejercicios incluyen todo lo que hemos dado recientemente: errores, transacciones, procedimientos y funciones.
+--ejercicios: ejer7.sql, ejer8.sql

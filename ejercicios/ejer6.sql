@@ -12,4 +12,5 @@ Caundo captures este error muestra un mensaje diciendo "No puedes introducir cam
 */
 
 
-insert into empleados values(31,'Pepe','gracia','tomoso','40','email@k.com','PAR-FR',30,'trabajador');
+insert into empleados values(32,'Juan','Lopez','Perales','10','emailj@k.com','PAR-FR',29,'becario');
+update empleados set CodigoOficina=10 where codigoempleado=32; 
