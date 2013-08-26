@@ -1,5 +1,5 @@
 /*
-Vamos a provocar un par de errores y a capturarlos. Realiza estos dos ejercicios (ejer5a y ejer5b):
+Vamos a provocar un par de errores y a capturarlos. Realiza estos dos ejercicios (ejer6a y ejer6b):
 
 Primero divide 0 entre otro numero y muestra el resultado. Como dara error captura
 la excepcion que corresponda mostrando el mensaje "No puede divir 0 por otro numero". 
@@ -12,5 +12,5 @@ Caundo captures este error muestra un mensaje diciendo "No puedes introducir cam
 */
 
 
-insert into empleados values(32,'Juan','Lopez','Perales','10','emailj@k.com','PAR-FR',29,'becario');
-update empleados set CodigoOficina=10 where codigoempleado=32; 
+insert into empleados values(31,'Juan','Lopez','Perales','10','emailj@k.com','PAR-FR',29,'becario');
+
